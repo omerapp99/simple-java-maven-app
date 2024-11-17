@@ -24,21 +24,25 @@ jobs:
       - name: Install Maven 3.9.2
         run: |
           MAVEN_VERSION=3.9.2
-          # Download Maven from a valid Apache mirror
-          curl -sL https://downloads.apache.org/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz -o maven.tar.gz
+          # Use Apache's official download URL with https
+          wget https://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz -O maven.tar.gz
 
-          # Verify the file was downloaded successfully
+          # Verify the download and extract
           if [ -s maven.tar.gz ]; then
             echo "Maven tarball downloaded successfully."
+            # Use verbose extraction to see any potential issues
+            tar -xzvf maven.tar.gz
           else
-            echo "Failed to download Maven tarball. Exiting."
+            echo "Failed to download Maven tarball."
             exit 1
           fi
 
-          # Extract and install Maven
-          tar -xzf maven.tar.gz
+          # Move Maven to the correct location
           sudo mv apache-maven-$MAVEN_VERSION /opt/maven
-          sudo ln -s /opt/maven/bin/mvn /usr/bin/mvn
+          sudo ln -s /opt/maven/bin/mvn /usr/local/bin/mvn
+
+          # Ensure correct permissions
+          sudo chmod +x /usr/local/bin/mvn
 
       # Confirm the correct Maven version is installed
       - name: Confirm Maven Version
@@ -95,6 +99,9 @@ jobs:
     needs: build  # Ensures this job runs after 'build'
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
       # Install Docker and Docker Compose
       - name: Install Docker and Docker Compose
         run: |
@@ -105,7 +112,8 @@ jobs:
           sudo usermod -aG docker $USER
 
           # Install Docker Compose
-          sudo curl -L "https://github.com/docker/compose/releases/download/$(curl -s https://api.github.com/repos/docker/compose/releases/latest | jq -r .name)/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          DOCKER_COMPOSE_VERSION=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | jq -r .name)
+          sudo curl -L "https://github.com/docker/compose/releases/download/$DOCKER_COMPOSE_VERSION/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
           sudo chmod +x /usr/local/bin/docker-compose
 
       # Deploy Docker image using docker-compose
