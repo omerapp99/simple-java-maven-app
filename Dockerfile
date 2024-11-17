@@ -4,8 +4,8 @@ WORKDIR /app
 COPY . .
 RUN mvn clean package -DskipTests
 
-# Second stage: Run with Java 17
-FROM eclipse-temurin:17-jre-slim
+# Second stage: Run the built app
+FROM openjdk:17-slim
 WORKDIR /app
-COPY --from=builder /app/target/simple-java-maven-app-*.jar /app/app.jar
+COPY --from=builder /app/target/my-app-*.jar /app/app.jar
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]
