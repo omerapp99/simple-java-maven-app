@@ -57,11 +57,11 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/simple-java-maven-app:${{ github.sha }} .
+          docker build -t omerapp99/simple-java-maven-app:${{ github.sha }} .
 
       - name: Push Docker image
         run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/simple-java-maven-app:${{ github.sha }}
+          docker push omerapp99/simple-java-maven-app:${{ github.sha }}
 
   deploy:
     runs-on: ubuntu-latest
