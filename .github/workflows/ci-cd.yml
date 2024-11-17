@@ -6,7 +6,7 @@ on:
       - master
 
 jobs:
-  build:
+  versioning:
     runs-on: ubuntu-latest
 
     steps:
@@ -19,23 +19,65 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: 'maven'
 
-      # Verify Java and Maven versions
-      - name: Verify Versions
+      # Install Maven 3.9.2
+      - name: Install Maven 3.9.2
         run: |
-          java -version
-          mvn -version
+          MAVEN_VERSION=3.9.2
+          # Use Apache's official download URL with https
+          wget https://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz -O maven.tar.gz
 
-      # Build with Maven
-      - name: Build with Maven
-        run: mvn clean package -DskipTests
+          # Verify the download and extract
+          if [ -s maven.tar.gz ]; then
+            echo "Maven tarball downloaded successfully."
+            # Use verbose extraction to see any potential issues
+            tar -xzvf maven.tar.gz
+          else
+            echo "Failed to download Maven tarball."
+            exit 1
+          fi
 
-      # Set up Docker Buildx
+          # Move Maven to the correct location
+          sudo mv apache-maven-$MAVEN_VERSION /opt/maven
+          sudo ln -s /opt/maven/bin/mvn /usr/local/bin/mvn
+
+          # Ensure correct permissions
+          sudo chmod +x /usr/local/bin/mvn
+
+      # Confirm the correct Maven version is installed
+      - name: Confirm Maven Version
+        run: mvn -version
+
+      # Increment the version in the pom.xml
+      - name: Increment Version
+        run: |
+          current_version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          new_version=$(echo $current_version | awk -F. -v OFS=. '{$NF = $NF + 1; print}')
+          mvn versions:set -DnewVersion=$new_version
+          mvn versions:commit
+          mvn clean install
+
+      # Commit and push the version change to the repository
+      - name: Commit and push version change
+        run: |
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
+          git add pom.xml
+          git commit -m "Update version to $new_version"
+          git push
+
+  build:
+    runs-on: ubuntu-latest
+    needs: versioning  # Ensures this job runs after 'versioning'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      # Log in to Docker Hub
+      # Log in to Docker Hub using Docker Hub credentials from GitHub Secrets
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
@@ -45,16 +87,12 @@ jobs:
       # Build Docker image
       - name: Build Docker Image
         run: |
-          docker build \
-            -t omerapp99/simple-java-maven-app:${{ github.sha }} \
-            -t omerapp99/simple-java-maven-app:latest \
-            .
+          docker build --no-cache -t omerapp99/simple-java-maven-app:${{ github.sha }} .
 
-      # Push Docker images
-      - name: Push Docker Images
+      # Push Docker image to Docker Hub
+      - name: Push Docker Image
         run: |
           docker push omerapp99/simple-java-maven-app:${{ github.sha }}
-          docker push omerapp99/simple-java-maven-app:latest
 
   deploy:
     runs-on: ubuntu-latest
@@ -78,8 +116,7 @@ jobs:
           sudo curl -L "https://github.com/docker/compose/releases/download/$DOCKER_COMPOSE_VERSION/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
           sudo chmod +x /usr/local/bin/docker-compose
 
-      # Pull and deploy the latest Docker image
+      # Deploy Docker image using docker-compose
       - name: Deploy Docker Image
         run: |
-          docker pull omerapp99/simple-java-maven-app:latest
           docker-compose up -d
