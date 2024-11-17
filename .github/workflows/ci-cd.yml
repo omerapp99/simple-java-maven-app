@@ -57,13 +57,8 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          # Use short commit SHA as tag
           SHORT_SHA=$(git rev-parse --short HEAD)
-          
-          # Build the image
           docker build --no-cache -t ${{ secrets.DOCKER_USERNAME }}/simple-java-maven-app:$SHORT_SHA .
-          
-          # Push both tagged and latest images
           docker push ${{ secrets.DOCKER_USERNAME }}/simple-java-maven-app:$SHORT_SHA
 
   deploy:
@@ -77,7 +72,5 @@ jobs:
       - name: Deploy Docker Image
         run: |
           SHORT_SHA=$(git rev-parse --short HEAD)
-          
           docker pull ${{ secrets.DOCKER_USERNAME }}/simple-java-maven-app:$SHORT_SHA
-          
           docker run ${{ secrets.DOCKER_USERNAME }}/simple-java-maven-app:$SHORT_SHA 
