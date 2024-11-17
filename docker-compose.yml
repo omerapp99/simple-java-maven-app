@@ -1,7 +1,0 @@
-version: '3.8'
-services:
-  app:
-    image: omerapp99/simple-java-maven-app:${IMAGE_TAG:-latest}
-    ports:
-      - "8080:8080"
-    restart: unless-stopped
