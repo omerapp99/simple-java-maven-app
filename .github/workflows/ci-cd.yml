@@ -111,5 +111,4 @@ jobs:
           docker pull $DOCKER_USERNAME/simple-java-maven-app:$SHORT_SHA
           
           # Run docker compose
-          docker compose up -d
-          docker-compose logs  
+          docker run $DOCKER_USERNAME/simple-java-maven-app:$SHORT_SHA 
