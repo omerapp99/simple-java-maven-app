@@ -76,11 +76,8 @@ jobs:
 
       - name: Deploy Docker Image
         run: |
-          # Generate short SHA
           SHORT_SHA=$(git rev-parse --short HEAD)
           
-          # Pull the image
-          docker pull $DOCKER_USERNAME/simple-java-maven-app:$SHORT_SHA
+          docker pull ${{ secrets.DOCKER_USERNAME }}/simple-java-maven-app:$SHORT_SHA
           
-          # Run docker compose
-          docker run $DOCKER_USERNAME/simple-java-maven-app:$SHORT_SHA 
+          docker run ${{ secrets.DOCKER_USERNAME }}/simple-java-maven-app:$SHORT_SHA 
