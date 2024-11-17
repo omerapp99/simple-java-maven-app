@@ -19,7 +19,16 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      # No need to set Maven separately, it's automatically managed by the Java setup
+      - name: Install Maven 3.9.2
+        run: |
+          curl -sL https://dlcdn.apache.org/maven/maven-3/3.9.2/binaries/apache-maven-3.9.2-bin.tar.gz -o maven.tar.gz
+          tar -xzf maven.tar.gz
+          sudo mv apache-maven-3.9.2 /opt/maven
+          sudo ln -s /opt/maven/bin/mvn /usr/bin/mvn
+
+      - name: Confirm Maven Version
+        run: |
+          mvn -version
 
       - name: Increment Version
         run: |
