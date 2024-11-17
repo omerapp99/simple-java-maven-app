@@ -18,6 +18,14 @@ jobs:
         with:
           java-version: '11'
 
+      - name: Check if this is a version commit
+        id: check_commit
+        run: |
+          if [[ $(git log -1 --pretty=%B) == *"Update version"* ]]; then
+            echo "Skipping version update commit"
+            exit 0
+          fi
+
       - name: Increment Version
         run: |
           mvn versions:set -DnewVersion=1.0.$(( $(mvn help:evaluate -Dexpression=project.version -q -DforceStdout | grep -o '[0-9]*$') + 1 ))
